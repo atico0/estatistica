@@ -20,42 +20,71 @@ def test_chi_pearson(categorias, freqs, distribuicao):
   return(T)
 
 
-#esse vai ser o teste para intervalos de valores
-def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
-  n = np.sum(freqs)
-  p = []
-  for i in range(intervalos.shape[0]):
-    p.append(distribuicao.cdf(intervalos[i][1]) - distribuicao.cdf(intervalos[i][0]))
-  p = np.array(p)
-  freqs_esperadas = n * p
-  quadrado_diferencas = (freqs - freqs_esperadas)**2
-
-  T = np.sum((quadrado_diferencas)/freqs_esperadas)
-  df = pd.DataFrame({'intervalos':intervalos, 'freqs':freqs, 'p':p, 'freqs_esperadas':freqs_esperadas, 'quadrado_diferencas':quadrado_diferencas})
-  print(df)
-  return(T)
-
 
 #esse vai ser o teste para intervalos de valores (padronizados)
-def test_chi_pearson_intevalos_padronizados(intervalos, freqs, distribuicao):
+def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
   n = np.sum(freqs)
-  p = []
+  
+  #calculando os valores de x como sendo o ponto médio dos limites dos intervalos
+  amplitude = intervalos[1,1] - intervalos[1,0]
+  x = np.array([])
   for i in range(intervalos.shape[0]):
-    p.append(distribuicao.cdf(intervalos[i][1]) - distribuicao.cdf(intervalos[i][0]))
-  p = np.array(p)
+    if i==0 and np.isinf(intervalos[i,0]):
+      ponto_medio = (intervalos[i,1] + (intervalos[i,1] - amplitude)) / 2
+      x = np.append(x, ponto_medio)
+      
+    elif i== (intervalos.shape[0]-1) and np.isinf(intervalos[i,1]):
+      ponto_medio = (intervalos[i,0] + (intervalos[i,0] + amplitude)) / 2
+      x = np.append(x, ponto_medio)
+    else:
+      ponto_medio = (intervalos[i,0] +intervalos[i,1]) / 2
+      x = np.append(x, ponto_medio)
+  
+  xf = x*freqs
+  media = np.sum(xf)/n
+  var = (np.sum((x**2)*freqs) - n * media**2) / (n - 1)
+
+  if distribuicao == sts.norm:
+    distribuicao_padronizada = distribuicao(0, 1)
+
+  #calculando a padronização dos limites superiores dos intervalos
+  z = np.array([])
+  for i in range(len(x)):
+    if (i == (intervalos.shape[0]-1)) and np.isinf(intervalos[i,1]):
+      z = np.append(z,np.nan)
+    else:
+      ls = intervalos[i,1]
+      z = np.append(z,(ls - media)/(var**0.5))
+
+  #calculando as acumuladas do z
+  acumulada = np.array([])
+  for i in range(len(z)):
+    if np.isnan(z[i]):
+      acumulada = np.append(acumulada, 1)
+    else:
+      acumulada = np.append(acumulada, distribuicao_padronizada.cdf(z[i]))
+
+  #calculando a p como das acumuladas
+  p = np.array([])
+  for i in range(len(acumulada)):
+    if i==0:
+      p = np.append(p, acumulada[i])
+    else:
+      p = np.append(p, acumulada[i] - acumulada[i-1]) 
+
+  #calculando a estatística de teste
   freqs_esperadas = n * p
   quadrado_diferencas = (freqs - freqs_esperadas)**2
-
   T = np.sum((quadrado_diferencas)/freqs_esperadas)
-  df = pd.DataFrame({'intervalos':intervalos, 'freqs':freqs, 'p':p, 'freqs_esperadas':freqs_esperadas, 'quadrado_diferencas':quadrado_diferencas})
+  
+  df = pd.DataFrame({'intervalos[0]':intervalos[:, 0], 'intervalos[1]':intervalos[:, 1], 'x':x, 'z':z, 'acumulada':acumulada,
+                     'freqs':freqs, 'p':p, 'freqs_esperadas':freqs_esperadas, 'quadrado_diferencas':quadrado_diferencas})
   print(df)
-  return(T)
+  return(T, media, var)
 
 
 
-#2- Teste de Lilliefors 
-
-
+#2.3.2 Teste de Lilliefors
 
 def test_lilli(dados):
 
@@ -82,7 +111,6 @@ def test_lilli(dados):
 
 
 #3 Teste de Kolmogorov- Sminorv
-
 
 def test_Kolmogorov_Sminorv(dados, distribuicao):
 
@@ -114,6 +142,7 @@ def mk(dados, k):
   n = len(dados)
   m = np.sum((dados - media)**k) / n
   return(m)
+
 
 def test_Jarque_Bera(dados):
   n = len(dados)
@@ -153,14 +182,9 @@ def test_sinal(x, y):
 
 
 
-
-
-
-
-
-
 def sorteio(vetor):  
-  #eu tive que criar essa função pq o np.arsort não estava funcionando direito (ou como eu acho que devia funcionar)
+  #eu tive que criar essa função pq o np.arsort não estava funcionando direito
+  #(ou como eu acho que devia funcionar)
   lista = vetor.tolist()
   ordenado = sorted(lista)
   indices = []
@@ -176,7 +200,6 @@ def sorteio(vetor):
 
 
 def ajeita_posto(vetor):
-
   #criando o vetor e os postos dos valores > 0
   vetor_sem_0 = vetor[vetor > 0].copy() # !=0 tbm serve
   posto_sem_0 = sorteio(vetor_sem_0) + 1 #o + 1 é pq o primeiro indice é o 1
@@ -210,8 +233,8 @@ def ajeita_posto(vetor):
 
 
 def teste_wilcoxon(x, y):
-  # MDS o tempo e estresse que eu passei criando esse teste e as duas funções acima não tá escrito nessas linhas de código
-
+  #O tempo e estresse que eu passei criando esse teste e as duas funções acima não tá escrito nessas linhas de código
+  
   d = y - x
   abs_d = np.abs(d)
   posto, posto_ver = ajeita_posto(abs_d)
