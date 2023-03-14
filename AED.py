@@ -1,10 +1,49 @@
+import numpy as np
+import pandas as pd
+import utils
+
 def media(x):
   """função da média aritimética
   
   x vetor numérico
-  vetor com os dados dos quais será calculad1 a média"""
+  vetor com os dados dos quais será calculada a média"""
   v = np.sum(x) / len(x)
   return v
+
+def moda(x):
+  """
+  função que calcula media modal (o elemento que mais aparece)
+  obs: caso varios elementos tenham a maior frequência,
+  a função retornará uma lista com as modas
+
+  x vetor numérico
+  vetor com os dados dos quais será calculada a moda
+  """
+  modas = []
+  dicio = utils.contar_unicos(x)
+  maior_contagem = max(list(dicio.keys()))
+  for i in range(len(x)):
+    if dicio[x[i]] == maior_contagem:
+      modas.append(x[i])
+  if len(modas) == 1:
+    return modas[0]  
+  return modas
+
+def mediana(lista):
+  """
+  função que calcula media mediana (o elemento do meio dos dados ordenados)
+
+  x vetor numérico
+  vetor com os dados dos quais será calculada a mediana
+  """
+
+  lista_ordenada = nao_parametrica.ordena(lista)
+  tamanho = len(lista_ordenada)
+  if tamanho % 2 == 0:
+      mediana = (lista_ordenada[int(tamanho/2) - 1] + lista_ordenada[int(tamanho/2)]) / 2
+  else:
+      mediana = lista_ordenada[int(tamanho/2)]
+  return mediana
 
 
 def media_geo(x):
@@ -51,7 +90,8 @@ def momentos(x, momento, k=0, c='média'):
   usado no calculo de funções como a variância amostral
 
   c: valor numérico
-  valor no qual o momento está centrado"""
+  valor no qual o momento está centrado
+  """
 
   if c == 'média':
     c = media(x)
@@ -164,3 +204,100 @@ def coef_curtose_am(x):
   n = len(x)
   result = n * (n+1) * np.sum(((x - mean) / desvio_padrao_am(x))**4) / ((n-1) * (n-2) * (n-3))
   return result
+
+def covariancia_pop(x, y):
+  """
+  Função populacional da covariância
+
+  x: vetor numérico
+  y: vetor numérico
+  variáveis das quais será calculada a variância
+
+  interpretação:
+  quanto maior o modulo da covariância maior será a interferncia de x em y
+  (e vice versa). No caso da covariância positiva, um aumento em x implica num
+  aumento em y e no caso da covariância negativa, um aumento em y
+  implica um decaimento em y
+  """
+  media_x = media(x)
+  media_y = media(y)
+  cov = media((x - media_x) * (y - media_y))
+  return cov
+
+
+def correlacao_pop(x, y):
+  """
+  Função populacional da correlação
+
+  x: vetor numérico
+  y: vetor numérico
+  variáveis das quais será calculada a variância
+
+  interpretação:
+  quanto maior o modulo da correlação maior será a interferncia de x em y
+  (e vice versa). No caso da correlação positiva, um aumento em x implica num
+  aumento em y e no caso da correlação negativa, um aumento em y
+  implica um decaimento em y
+  
+  |corr| = 0 => correlação inexistente
+  0 < |corr| <= 0.19 => correlação muito fraca
+  0.19 < |corr| <= 0.39 => correlação fraca
+  0.39 < |corr| <= 0.69 => correlação moderada
+  0.69 < |corr| <= 0.89 => correlação forte
+  0.89 < |corr| < 1 => correlação muiot forte
+  |corr| = 1 => correlação perfeita
+  """
+  cov = covariancia_pop(x,y)
+  dp_x = desvio_padrao_pop(x)
+  dp_y = desvio_padrao_pop(y)
+  corr = cov / (dp_x * dp_y)
+  return corr
+
+def covariancia_am(x, y):
+  """
+  Função amostral da covariância
+
+  x: vetor numérico
+  y: vetor numérico
+  variáveis das quais será calculada a variância
+
+  interpretação:
+  quanto maior o modulo da covariância maior será a interferncia de x em y
+  (e vice versa). No caso da covariância positiva, um aumento em x implica num
+  aumento em y e no caso da covariância negativa, um aumento em y
+  implica um decaimento em y
+  """
+  media_x = media(x)
+  media_y = media(y)
+  n = len(x)
+  cov = momentos((x - media_x) * (y - media_y), k=0)
+  return cov
+
+
+def correlacao_am(x, y):
+  """
+  Função amostral da correlação
+
+  x: vetor numérico
+  y: vetor numérico
+  variáveis das quais será calculada a variância
+
+  interpretação:
+  quanto maior o modulo da correlação maior será a interferncia de x em y
+  (e vice versa). No caso da correlação positiva, um aumento em x implica num
+  aumento em y e no caso da correlação negativa, um aumento em y
+  implica um decaimento em y
+  
+  |corr| = 0 => correlação inexistente
+  0 < |corr| <= 0.19 => correlação muito fraca
+  0.19 < |corr| <= 0.39 => correlação fraca
+  0.39 < |corr| <= 0.69 => correlação moderada
+  0.69 < |corr| <= 0.89 => correlação forte
+  0.89 < |corr| < 1 => correlação muiot forte
+  |corr| = 1 => correlação perfeita
+  """
+  cov = covariancia_am(x,y)
+  dp_x = desvio_padrao_pop(x)
+  dp_y = desvio_padrao_pop(y)
+  corr = cov / (dp_x * dp_y)
+  return corr
