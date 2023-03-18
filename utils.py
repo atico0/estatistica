@@ -100,7 +100,7 @@ def ordena_com_origem(vetor, modo='cre'):
 
 
 def ordena_com_origem_e_atual(vetor, modo='cre'):
-   """
+  """
   ordena os vetores de modo crescente ou decrescente
   mas kda valor tem além do valor original, também tem o indice original e atual
 

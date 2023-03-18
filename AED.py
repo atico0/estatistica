@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import utils
 
+
 def media(x):
   """função da média aritimética
   
@@ -20,11 +21,14 @@ def moda(x):
   vetor com os dados dos quais será calculada a moda
   """
   modas = []
-  dicio = utils.contar_unicos(x)
-  maior_contagem = max(list(dicio.keys()))
+  dicio = contar_unicos(x)
+  maior_contagem = max(list(dicio.values()))
+  if maior_contagem == 1:
+    print('não existem valores repetidos para o cálculo da moda')
+    return modas
   for i in range(len(x)):
     if dicio[x[i]] == maior_contagem:
-      modas.append(x[i])
+      modas.append({x[i]: dicio[x[i]]})
   if len(modas) == 1:
     return modas[0]  
   return modas
@@ -37,7 +41,7 @@ def mediana(lista):
   vetor com os dados dos quais será calculada a mediana
   """
 
-  lista_ordenada = nao_parametrica.ordena(lista)
+  lista_ordenada = utils.ordena(lista)
   tamanho = len(lista_ordenada)
   if tamanho % 2 == 0:
       mediana = (lista_ordenada[int(tamanho/2) - 1] + lista_ordenada[int(tamanho/2)]) / 2
@@ -301,3 +305,23 @@ def correlacao_am(x, y):
   dp_y = desvio_padrao_pop(y)
   corr = cov / (dp_x * dp_y)
   return corr
+
+
+def analise(X):
+  for j in range(X.shape[1]):
+    coluna = X[:, j]
+    print(f'COLUNA {j}:')
+    print(f'Mínimo: {np.min(coluna)}')
+    print(f'Média: {media(coluna)}')
+    print(f'Modas: {moda(coluna)}')
+    print(f'Quartil 1: {np.percentile(coluna, 25)}')
+    print(f'Quartil 2 (mediana): {mediana(coluna)}')
+    print(f'Quartil 3: {np.percentile(coluna, 75)}')
+    print(f'Máximo: {np.max(coluna)}')
+    print(f'Variância: {var_am(coluna)}')
+    print(f'Desvio padrão: {desvio_padrao_am(coluna)}')
+    print(f'coeficiente de assimetria: {coef_assimetria_am(coluna)}')
+    print(f'coeficiente de curtose: {coef_curtose_am(coluna)}')
+    print('=-='*20)
+    print('=-='*20)
+
