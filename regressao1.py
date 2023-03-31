@@ -43,7 +43,7 @@ class regressao_linear_multipla(object):
     intercepto: valor boleano
     se intercepto == True, a regressão é feita com o intercepto
     """
-
+    self.sigma = sigma
     self.intercepto = intercepto
     self.treinar(X,Y)
     self.T, self.K = self.X_com_uns.shape
@@ -62,10 +62,8 @@ class regressao_linear_multipla(object):
     if intercepto:
       self.coef_ajt()
     
-    print(f'R2: {self.R2}')
-    print(f'R2 ajustado: {self.R2_ajt}')
-    #print(f'F: {self.teste_F()}')
-
+    self.intervalos = self.estima_int()
+    self.test_F()
   
      
 
@@ -113,6 +111,8 @@ class regressao_linear_multipla(object):
       x = self.adiciona_uns(x)
     return np.linalg.multi_dot([x, self.beta_hat])
   
+
+
   def estima_erro(self):
     """
     Calulando os residuos com base nos X e Y fornecidos
@@ -156,6 +156,9 @@ class regressao_linear_multipla(object):
     self.S2 = ((self.T - self.K) * self.msres - ((self.e_hat ** 2) / (1 - self.H_diag))) / (self.T - self.K - 1)
     self.t = self.e_hat / (self.S2 * (1 - self.H_diag))**0.5
 
+
+
+
   def estima_var(self):
     """
     Estimando o sigma 2 (para o caso em que sigma 2 não é fornecido)
@@ -183,7 +186,11 @@ class regressao_linear_multipla(object):
     print('PARA CALCULAR A REAL COVARIÂNCIA, É NECESSÁRIO O VALOR REAL DA VARIÂNCIA')
   
 
-  def estima_int(self, alpha):
+
+
+
+
+  def estima_int(self, alpha=0.05):
     """
     Estima intervalos de confiança para os coeficientes
     
@@ -205,6 +212,10 @@ class regressao_linear_multipla(object):
       intervalos.append([self.beta_hat[i] - t*diagonal[i], self.beta_hat[i] + t*diagonal[i]])
     return intervalos
     
+
+
+
+
   def teste_t(self, j, beta_j):
     """
     calculando a estatística do teste t
@@ -217,9 +228,9 @@ class regressao_linear_multipla(object):
     beta_j: valor numérico
     """
 
-    t = (self.beta_hat[j] - beta_j) / (self.cov_hat[j,j]**0.5)
-    print(f'{self.beta_hat[j]} - {beta_j} / {self.cov_hat[j,j]**0.5}')
-    print('Estatística de teste: ',t)
+    t = ((self.beta_hat[j] - beta_j) / (self.cov_hat[j,j]**0.5))[0]
+    #print(f'{self.beta_hat[j]} - {beta_j} / {self.cov_hat[j,j]**0.5}')
+    #print('Estatística de teste: ',t)
     return t
 
   def test_F(self):
@@ -232,8 +243,8 @@ class regressao_linear_multipla(object):
     self.cov_hat_s = self.cov_hat[1:,1:]
     beta_cov_inv_beta = np.linalg.multi_dot([np.matrix.transpose(self.beta_hats), np.linalg.inv(self.cov_hat_s), self.beta_hats])
     # np.linalg.multi_dot funciona como o np.dot e o np.matmul mas sever pra mais de duas matrizes por vez
-    F = (beta_cov_inv_beta)/ (self.K - 1)
-    return F
+    self.F = (((beta_cov_inv_beta)/ (self.K - 1)))[0]
+    self.F = self.F[0]
 
   def test_wald(self, R, r):
     """calculando a estatística do teste wald
@@ -251,6 +262,9 @@ class regressao_linear_multipla(object):
     w = np.linalg.multi_dot(Rbeta_hatr, trambolho, np.matrix.transpose(Rbeta_hatr))
     return w
 
+
+
+
   def coef_det(self):
     """
     Calculando o coeficiente de determinação (R2) que é a capacidade explicativa do modelo
@@ -260,18 +274,27 @@ class regressao_linear_multipla(object):
       self.SST = sum((self.Y - media_y) ** 2)
       self.SSE = sum(self.e_hat ** 2) 
       self.SSR = sum((self.y_hat - media_y)** 2)
-      self.R2 = self.SSR / self.SST
+      self.R2 = (self.SSR / self.SST)[0]
     else:
-      self.R2 = 1 - (np.sum(self.e_hat ** 2) / np.sum(self.Y ** 2))
-    return self.R2
+      self.R2 = (1 - (np.sum(self.e_hat ** 2) / np.sum(self.Y ** 2)))[0]
 
 
   def coef_ajt(self):
     """
     Calculando o coeficiente de determinação ajustado que serve para fazer comparações entre modelos
     """
-    self.R2_ajt = 1 - (self.SSE / (self.T - self.K)) / (self.SST / (self.T - 1))
-    return self.R2_ajt
+    self.R2_ajt = (1 - (self.SSE / (self.T - self.K)) / (self.SST / (self.T - 1)))[0]
+
+
+  def resumo(self):
+    print(f'R2: {round(self.R2, 4)}')
+    print(f'R2 ajustado: {round(self.R2_ajt, 4)}')
+    print(f'F: {round(self.F, 4)}')
+    print('coef    valor     t            IC')
+    for i in range(self.K):
+      print(f'beta{i}', end = '   ')
+      print(f'{round(self.beta_hat[i][0], 4)}', end = '   ')
+      print(f'{round(self.teste_t(i, 0), 4)}', end = '      ')
+      print(f'{self.intervalos[i]}')
 
   
-
