@@ -24,7 +24,7 @@ def moda(x):
   dicio = contar_unicos(x)
   maior_contagem = max(list(dicio.values()))
   if maior_contagem == 1:
-    print('não existem valores repetidos para o cálculo da moda')
+    return np.nan
     return modas
   for i in range(len(x)):
     if dicio[x[i]] == maior_contagem:
@@ -308,20 +308,48 @@ def correlacao_am(x, y):
 
 
 def analise(X):
+  """
+  Calcula as estatísticas básicas (por coluna) de uma matriz
+  """
   for j in range(X.shape[1]):
     coluna = X[:, j]
     print(f'COLUNA {j}:')
-    print(f'Mínimo: {np.min(coluna)}')
-    print(f'Média: {media(coluna)}')
-    print(f'Modas: {moda(coluna)}')
-    print(f'Quartil 1: {np.percentile(coluna, 25)}')
-    print(f'Quartil 2 (mediana): {mediana(coluna)}')
-    print(f'Quartil 3: {np.percentile(coluna, 75)}')
-    print(f'Máximo: {np.max(coluna)}')
-    print(f'Variância: {var_am(coluna)}')
-    print(f'Desvio padrão: {desvio_padrao_am(coluna)}')
-    print(f'coeficiente de assimetria: {coef_assimetria_am(coluna)}')
-    print(f'coeficiente de curtose: {coef_curtose_am(coluna)}')
+    print(f'Mínimo: {round(np.min(coluna), 4)}')
+    print(f'Média: {round(media(coluna), 4)}')
+    print(f'Modas: {round(moda(coluna), 4)}')
+    print(f'Quartil 1: {round(np.percentile(coluna, 25), 4)}')
+    print(f'Quartil 2 (mediana): {round(mediana(coluna), 4)}')
+    print(f'Quartil 3: {round(np.percentile(coluna, 75), 4)}')
+    print(f'Máximo: {round(np.max(coluna), 4)}')
+    print(f'Variância: {round(var_am(coluna), 4)}')
+    print(f'Desvio padrão: {round(desvio_padrao_am(coluna), 4)}')
+    print(f'coeficiente de assimetria: {round(coef_assimetria_am(coluna), 4)}')
+    print(f'coeficiente de curtose: {round(coef_curtose_am(coluna), 4)}')
     print('=-='*20)
     print('=-='*20)
 
+
+
+def analise2(X):
+  """
+  Calcula as estatísticas básicas (por coluna) de uma matriz
+  (não consigo decidir entre essa e a outra)
+
+  X: matriz numérica
+  Matriz da qual serão calculadas as estatísticas
+  """
+  print('COLUNA  Mínimo  Média  Modas  Quartil 1  mediana  Quartil 3  Máximo  Variância  Dp  assimetria  curtose')
+  for j in range(X.shape[1]):
+    coluna = X[:, j]
+    print(f' {j}', end='    ')
+    print(f'{round(np.min(coluna), 4)}', end='    ')
+    print(f'{round(media(coluna), 4)}', end='    ')
+    print(f'{moda(coluna)}', end='  ')
+    print(f'{round(np.percentile(coluna, 25), 4)}', end='    ')
+    print(f'{round(mediana(coluna), 4)}', end='    ')
+    print(f'{round(np.percentile(coluna, 75), 4)}', end='    ')
+    print(f'{round(np.max(coluna), 4)}', end='    ')
+    print(f'{round(var_am(coluna), 4)}', end='    ')
+    print(f'{round(desvio_padrao_am(coluna), 4)}', end='    ')
+    print(f'{round(coef_assimetria_am(coluna), 4)}', end='    ')
+    print(f'{round(coef_curtose_am(coluna), 4)}')

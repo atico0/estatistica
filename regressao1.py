@@ -48,6 +48,10 @@ class regressao_linear_multipla(object):
     self.treinar(X,Y)
     self.T, self.K = self.X_com_uns.shape
     self.estima_erro()
+    self.residuo_padronizados()
+    self.residuo_studentizado()
+    self.residuo_press()
+    self.residuo_Rstudent()
     if sigma:
        self.calcula_cov(sigma) 
     else:
@@ -57,6 +61,12 @@ class regressao_linear_multipla(object):
     self.coef_det()
     if intercepto:
       self.coef_ajt()
+    
+    print(f'R2: {self.R2}')
+    print(f'R2 ajustado: {self.R2_ajt}')
+    #print(f'F: {self.teste_F()}')
+
+  
      
 
   def adiciona_uns(self, X):
@@ -116,7 +126,7 @@ class regressao_linear_multipla(object):
     Calulando os residuos padronizados
     """
     
-    self.msres = np.sum(self.e_hat^2) / (self.T - self.K)
+    self.msres = np.sum(self.e_hat**2) / (self.T - self.K)
     self.d = self.e_hat / (self.msres**0.5)
     return self.d
 
@@ -143,7 +153,7 @@ class regressao_linear_multipla(object):
     Calulando os residuos Rstudentizados
     """
 
-    self.S2 = ((self.T - self.K) * self.msres - ((self.e_hat ** 2) / (1 - self.H_hat))) / (self.T - self.K - 1)
+    self.S2 = ((self.T - self.K) * self.msres - ((self.e_hat ** 2) / (1 - self.H_diag))) / (self.T - self.K - 1)
     self.t = self.e_hat / (self.S2 * (1 - self.H_diag))**0.5
 
   def estima_var(self):
@@ -170,7 +180,7 @@ class regressao_linear_multipla(object):
       self.sigma = sigma
       self.cov = sigma*self.X_linha_X_inv
       return self.cov
-    print('PARA CALCULAR A REAL COVARIÂNCI, É NECESSÁRIO O VALOR REAL DA VARIÂNCIA')
+    print('PARA CALCULAR A REAL COVARIÂNCIA, É NECESSÁRIO O VALOR REAL DA VARIÂNCIA')
   
 
   def estima_int(self, alpha):
@@ -262,5 +272,6 @@ class regressao_linear_multipla(object):
     """
     self.R2_ajt = 1 - (self.SSE / (self.T - self.K)) / (self.SST / (self.T - 1))
     return self.R2_ajt
-    
-        
+
+  
+
