@@ -273,7 +273,27 @@ def cria_ARMA(t, theta, phi, mu=0, q=1, p=1, distribuicao=sts.norm()):
     return y
 
 
-def estima_ar(serie, p):
+def estima_ar_momentos(serie, p):
+  T = len(serie)
+  auto_corr =  np.zeros(T)
+  rho_hat = np.zeros(p)
+  B_hat = np.zeros((p, p))
+  for i in range(p):
+    auto_corr[i] =  autocorr(serie, i)
+
+  for i in range(p):
+    rho_hat[i] = auto_corr[i+1]
+    parte1 = vetor[i::-1]
+    k1 = len(parte1)
+    parte2 = vetor[:(p-k1)]
+    B_hat[i,:] = np.append(parte1, parte2)
+
+  phi_hat = np.dot(np.linalg.inv(B_hat), rho_hat) 
+  return phi_hat
+
+  
+
+def estima_ar_sres(serie, p):
     T = len(serie)
     y = np.zeros(T-p)
     X = np.zeros((T-p, p))
@@ -290,6 +310,8 @@ def estima_ar(serie, p):
     
     modelo = regressao1.regressao_linear_multipla(X, y)
     return None
+
+
 
 #ar = estima_ar(serie, 2)
 
