@@ -181,8 +181,8 @@ class regressao_linear_multipla(object):
     """
     if sigma:
       self.sigma = sigma
-      self.cov = sigma*self.X_linha_X_inv
-      return self.cov
+      self.cov_hat = sigma*self.X_linha_X_inv
+      return self.cov_hat
     print('PARA CALCULAR A REAL COVARIÂNCIA, É NECESSÁRIO O VALOR REAL DA VARIÂNCIA')
   
 
@@ -199,7 +199,7 @@ class regressao_linear_multipla(object):
     """
     intervalos = []
     if self.sigma:
-      diagonal = np.diag(self.cov)
+      diagonal = np.diag(self.cov_hat)
       z = sts.norm().cdf(1 - (alpha/2))
       for i in range(len(self.beta_hat)):
         intervalos.append([self.beta_hat[i] - z*diagonal[i], self.beta_hat[i] + z*diagonal[i]])
@@ -274,21 +274,22 @@ class regressao_linear_multipla(object):
       self.SST = sum((self.Y - media_y) ** 2)
       self.SSE = sum(self.e_hat ** 2) 
       self.SSR = sum((self.y_hat - media_y)** 2)
-      self.R2 = (self.SSR / self.SST)[0]
+      self.R2 = (self.SSR / self.SST)
     else:
-      self.R2 = (1 - (np.sum(self.e_hat ** 2) / np.sum(self.Y ** 2)))[0]
+      self.R2 = (1 - (np.sum(self.e_hat ** 2) / np.sum(self.Y ** 2)))
 
 
   def coef_ajt(self):
     """
     Calculando o coeficiente de determinação ajustado que serve para fazer comparações entre modelos
     """
-    self.R2_ajt = (1 - (self.SSE / (self.T - self.K)) / (self.SST / (self.T - 1)))[0]
+    self.R2_ajt = (1 - (self.SSE / (self.T - self.K)) / (self.SST / (self.T - 1)))
+    self.R2_ajt = self.R2_ajt[0]
 
 
   def resumo(self):
-    print(f'R2: {round(self.R2, 4)}')
-    print(f'R2 ajustado: {round(self.R2_ajt, 4)}')
+    print(f'R2: {self.R2}')
+    print(f'R2 ajustado: {self.R2_ajt}')
     print(f'F: {round(self.F, 4)}')
     print('coef    valor     t            IC')
     for i in range(self.K):
@@ -297,4 +298,5 @@ class regressao_linear_multipla(object):
       print(f'{round(self.teste_t(i, 0), 4)}', end = '      ')
       print(f'{self.intervalos[i]}')
 
+  
   

@@ -7,8 +7,90 @@ import pandas as pd
 ###1 Testes de Aderência pelo χ^2 - Pearson 1900
 
 
-def test_chi_pearson(categorias, freqs, distribuicao):
+def estimador(categorias, freqs, distri, parametros_dados = []):
+  """
+  Função que estima os parâmetros das distribuições para o teste de chi quadradado
+  (caso discreto)
+
+  categorias: vetor numérico
+  caterigas dos dados que vamos testar as distribuições
+
+  freqs: vetor numérico
+  frequências das respectivas categorias
+
+  distribuicao: distribuição do modulo scipy.stats
+  distribuição dos dados
+
+  parametros_dados: vetor numérico
+  parâmetros  já calculados usados na estimação dos demais parâmetros
+
+  """
+
+  parametros = np.array([])
+  n = sum(freqs)
+
+
+  if distri == 'binomial':
+    size = parametros_dados[0]
+    soma = 0
+    for i in range(len(categorias)):
+      soma += categorias[i] * freqs[i]
+    p_hat = soma / (n*size)
+    parametros = np.append(parametros, p_hat)
+
+  elif distri == 'bernouli':
+    soma = 0
+    for i in range(len(categorias)):
+      soma += categorias[i] * freqs[i]
+    p_hat = soma / (n)
+    parametros = np.append(parametros, p_hat)
+
+  elif distri == 'poisson':
+    soma += categorias[i] * freqs[i]
+    lambda_hat = soma / n
+    parametros = np.append(parametros, lambda_hat)
+  
+  return parametros
+
+
+
+def test_chi_pearson(categorias, freqs, distribuicao, parametros_dados=[], estimar=''):
+  """
+  Testes chi quadrado de Aderência (caso discreto)
+  Ho: todos valores de x tem a mesma distribuição
+  H1: pelo menos 1 x tem uma distribuição diferente
+
+  categorias: vetor numérico
+  caterigas dos dados que vamos testar as distribuições
+
+  freqs: vetor numérico
+  frequências das respectivas categorias
+
+  distribuicao: distribuição do modulo scipy.stats
+  distribuição dos dados (se os parâmetros da distribuição não estiverem
+  definidos o parâmetro estimar deve ser definido como o nome da distribuição)
+
+  parametros_dados: vetor numérico
+  parâmetros  já calculados usados na estimação dos demais parâmetros
+
+  estimar: string:
+  nome da distribuição da qual será estimada os parâmetros
+  """
+
   n = np.sum(freqs)
+
+  if estimar:
+    if estimar == 'binomial':
+      p_hat = estimador(categorias, freqs, estimar, parametros_dados)
+      distribuicao = distribuicao(parametros_dados[0], p_hat)
+    elif estimar == 'bernouli':
+      p_hat = estimador(categorias, freqs, estimar, parametros_dados)
+      distribuicao = distribuicao(p_hat)
+    elif estimar == 'poisson':
+      lambda_hat = estimador(categorias, freqs, estimar)
+      distribuicao = distribuicao(lambda_hat)
+
+    
 
   freqs_esperadas = n * distribuicao.pmf(categorias)
   quadrado_diferencas = (freqs - freqs_esperadas)**2
@@ -17,13 +99,82 @@ def test_chi_pearson(categorias, freqs, distribuicao):
   
   df = pd.DataFrame({'categorias':categorias, 'freqs':freqs, 'freqs_esperadas':freqs_esperadas, 'quadrado_diferencas':quadrado_diferencas})
   print(df)
-  return(T)
+  return T
 
 
 
-#esse vai ser o teste para intervalos de valores (padronizados)
-def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
+def estimador_intervalo(x, freqs, distri, intervalos=[]):
+  """
+  Função que estima os parâmetros das distribuições para o teste de chi quadradado
+  (caso contínuo)
+
+  x: vetor numérico
+  representante de um intervalo
+  
+  freqs: vetor numérico
+  frequências dos intervalos
+
+  intervalos: vetor de vetores
+  vetor onde cada elemento é  uma lista
+  composta do intervalo inferior e do superior
+
+  distribuicao: distribuição do modulo scipy.stats
+  distribuição dos dados 
+
+  estimar: string:
+  nome da distribuição da qual será estimada os parâmetros
+  """
+  xf = x*freqs
   n = np.sum(freqs)
+  parametros = np.array([])
+  
+  if distri == 'normal':
+    media = np.sum(xf)/n
+    var = (np.sum((x**2)*freqs) - n * media**2) / (n - 1) 
+    parametros = np.append(parametros, media)
+    parametros = np.append(parametros, var)
+  
+  elif distri == 'exponencial':
+    media = np.sum(xf)/n
+    lambdaa = 1 / media
+    parametros = np.append(parametros, lambdaa)
+
+  elif distri == 'uniforme':
+    if np.isinf(intervalos[0,0]):
+      a = np.min(x)
+    else:
+      a = intervalos[0,0]
+    if np.isinf(intervalos[intervalos.shape[0]-1,1]):
+      b = np.max(x)
+    else:
+      b = intervalos[intervalos.shape[0]-1,1]
+    parametros = np.append(parametros, a)
+    parametros = np.append(parametros, b)
+    
+  return parametros
+
+
+def test_chi_pearson_intevalos(intervalos, freqs, distribuicao, estimar=''):
+  """
+  Testes chi quadrado de Aderência (caso contínuo)
+  Ho: todos valores de x tem a mesma distribuição
+  H1: pelo menos 1 x tem uma distribuição diferente
+
+  intervalos: vetor de vetores
+  vetor onde cada elemento é  uma lista
+  composta do intervalo inferior e do superior
+
+  freqs: vetor numérico
+  frequências dos respectivos intervalos
+
+  distribuicao: distribuição do modulo scipy.stats
+  distribuição dos dados (se os parâmetros da distribuição não estiverem
+  definidos o parâmetro estimar deve ser definido como o nome da distribuição)
+
+  estimar: string:
+  nome da distribuição da qual será estimada os parâmetros
+  """
+
   
   #calculando os valores de x como sendo o ponto médio dos limites dos intervalos
   amplitude = intervalos[1,1] - intervalos[1,0]
@@ -31,21 +182,22 @@ def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
   for i in range(intervalos.shape[0]):
     if i==0 and np.isinf(intervalos[i,0]):
       ponto_medio = (intervalos[i,1] + (intervalos[i,1] - amplitude)) / 2
-      x = np.append(x, ponto_medio)
       
     elif i== (intervalos.shape[0]-1) and np.isinf(intervalos[i,1]):
       ponto_medio = (intervalos[i,0] + (intervalos[i,0] + amplitude)) / 2
-      x = np.append(x, ponto_medio)
     else:
       ponto_medio = (intervalos[i,0] +intervalos[i,1]) / 2
-      x = np.append(x, ponto_medio)
-  
-  xf = x*freqs
-  media = np.sum(xf)/n
-  var = (np.sum((x**2)*freqs) - n * media**2) / (n - 1)
+    x = np.append(x, ponto_medio)
+    
 
-  if distribuicao == sts.norm:
-    distribuicao_padronizada = distribuicao(0, 1)
+  #calulando as distribuições
+  if estimar:
+    if  estimar == 'normal':
+      media_hat, var_hat = estimador_intervalo(x, freqs, distri=estimar)
+      distribuicao = distribuicao(media_hat, var_hat**0.5)
+    elif estimar == 'exponencial':
+      lambdaa = estimador_intervalo(x, freqs, estimar)
+      distribuicao = distribuicao(lambdaa)
 
   #calculando a padronização dos limites superiores dos intervalos
   z = np.array([])
@@ -54,7 +206,7 @@ def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
       z = np.append(z,np.nan)
     else:
       ls = intervalos[i,1]
-      z = np.append(z,(ls - media)/(var**0.5))
+      z = np.append(z,ls)
 
   #calculando as acumuladas do z
   acumulada = np.array([])
@@ -62,7 +214,7 @@ def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
     if np.isnan(z[i]):
       acumulada = np.append(acumulada, 1)
     else:
-      acumulada = np.append(acumulada, distribuicao_padronizada.cdf(z[i]))
+      acumulada = np.append(acumulada, distribuicao.cdf(z[i]))
 
   #calculando a p como das acumuladas
   p = np.array([])
@@ -75,13 +227,14 @@ def test_chi_pearson_intevalos(intervalos, freqs, distribuicao):
   #calculando a estatística de teste
   freqs_esperadas = n * p
   quadrado_diferencas = (freqs - freqs_esperadas)**2
-  T = np.sum((quadrado_diferencas)/freqs_esperadas)
+  quadrado_divido = (quadrado_diferencas)/freqs_esperadas
+  T = np.sum(quadrado_divido)
   
-  df = pd.DataFrame({'intervalos[0]':intervalos[:, 0], 'intervalos[1]':intervalos[:, 1], 'x':x, 'z':z, 'acumulada':acumulada,
-                     'freqs':freqs, 'p':p, 'freqs_esperadas':freqs_esperadas, 'quadrado_diferencas':quadrado_diferencas})
+  df = pd.DataFrame({'intervalos[0]':intervalos[:, 0], 'intervalos[1]':intervalos[:, 1], 'x':x, 'z':z, 'acumulada':acumulada,  'p':p,
+                     'freqs':freqs, 'freqs_esperadas':freqs_esperadas, 'quadrado_diferencas':quadrado_diferencas,
+                     'quadrado_divido':quadrado_divido})
   print(df)
-  return(T, media, var)
-
+  return T 
 
 
 #2.3.2 Teste de Lilliefors
